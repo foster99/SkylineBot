@@ -1,15 +1,15 @@
 import sys
 from antlr4 import *
-from SkylineLexer import SkylineLexer
-from SkylineParser import SkylineParser
-from SkylineVisitor import SkylineVisitor
+from SkylineLexer import SkylineLexer as Lexer
+from SkylineParser import SkylineParser as Parser
+from SkylineVisitor import SkylineVisitor as Visitor
 
 input_stream = InputStream(input('? '))
 
-lexer = SkylineLexer(input_stream)
+lexer = Lexer(input_stream)
 token_stream = CommonTokenStream(lexer)
-parser = SkylineParser(token_stream)
+parser = Parser(token_stream)
 tree = parser.root() 
 
-visitor = SkylineVisitor()
+visitor = Visitor()
 visitor.visit(tree)
