@@ -1,3 +1,5 @@
+import copy
+
 import matplotlib.pyplot as plt
 
 
@@ -11,38 +13,82 @@ class Skyline:
 
     def __init__(self):
         self.buildings = []
+        self.min = 0
+        self.max = 0
+        self.width = 0
+        self.height = 0
+
+    def clone(self):
+        return copy.deepcopy(self)
 
     def insert_building(self, xmin, h, xmax):
-        b = self.Building(xmin, h, xmax)
-        self.buildings += [b]
 
-    def invert(self,W,d0):
+        # if not (xmin < xmax & h > 0):
+        #     # raise error en la entrada
+        #     return
+        if len(self.buildings) == 0:
+            self.min = xmin
+            self.max = xmax
+            self.height = h
+            self.width = self.max - self.min
+        else:
+            # Check boundaries
+            if h > self.height:
+                self.height = h
+            if xmin < self.min | xmax > self.max:
+                if xmin < self.min:
+                    self.min = xmin
+                if xmax > self.max:
+                    self.max = xmax
+                self.width = self.max - self.min
+
+        self.buildings += [self.Building(xmin, h, xmax)]
+
+    def union(self, s):
+        if s.height > self.height:
+            self.height = s.height
+        if s.min < self.min | s.max > self.max:
+            if s.min < self.min:
+                self.min = s.min
+            if s.max > self.max:
+                self.max = s.max
+            self.width = self.max - self.min
+
+        self.buildings = self.buildings + s.buildings
+
+    # TODO: def intersection(self):
+
+    def invert(self):
         for b in self.buildings:
-            b.invert(W, d0)
+            b.invert(self.width, self.min)
 
     def translate(self, offset):
+        self.min += offset
+        self.max += offset
         for b in self.buildings:
             b.translate(offset)
 
     def replicate(self, n):
         if n < 2:
-            if n == 0: self.buildings = []
+            if n == 0:
+                self.buildings = []
             return
 
-        total = len(self.buildings)
-        new_buildings = []
-        for i in range(n):
-            offset = i * total
-            new_buildings += [b.translate(offset) for b in self.buildings]
+        total = self.width
+        print(total)
 
-        self.buildings = new_buildings
+        for i in range(n):
+            aux = self.clone()
+            aux.translate(i * total)
+            self.union(aux)
 
     def plot(self):
-        self.buildings = [b.plot() for b in self.buildings]
+        plt.figure()
+        for b in self.buildings:
+            b.plot()
         plt.savefig("tmp.png")
 
     class Building:
-
         """
         A class used to represent a building.
 
@@ -70,7 +116,7 @@ class Skyline:
             xmax : int
                 Building's end x-coord.
             h : int
-                Building's heigth.
+                Building's height.
             """
             self.xmin = xmin
             self.xmax = xmax
@@ -97,19 +143,31 @@ class Skyline:
             plt.bar(self.xmin + (self.w / 2), self.h, self.w)
 
 
+x = Skyline()
+x.insert_building(1, 5, 2)
+x.insert_building(2, 2, 3)
+# x.plot()
 
-a = Skyline()
-a.insert_building(1,5,2)
-a.insert_building(2,4,3)
-a.insert_building(3,8,5)
-a.invert(4,1)
-a.translate(4)
-a.insert_building(1,5,2)
-# a.invert(4,1)
-a.translate(-1)
-a.insert_building(2,4,3)
-a.insert_building(3,8,5)
-a.plot()
+y = x.clone()
+y.insert_building(7, 9, 8)
+# y.plot()
+
+# a = Skyline()
+# a.insert_building(1,5,2)
+# a.insert_building(2,4,3)
+# a.insert_building(3,8,5)
+# a.translate(4)
+# a.insert_building(1,5,2)
+# a.invert()
+# a.translate(6)
+#
+# b = Skyline()
+# b.insert_building(9,4,11)
+# b.insert_building(2,4,3)
+# b.invert()
+# a.insert_building(3,8,5)
+# c = a.clone()
+# c.union(b)
 
 # name_user = "salu2"
 #
