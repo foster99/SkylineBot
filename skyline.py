@@ -1,4 +1,7 @@
+import bisect
 import copy
+import random as r
+import time
 
 import matplotlib.pyplot as plt
 
@@ -11,13 +14,31 @@ class Skyline:
         List of buildings which conform the skyline.
     """
 
-    def __init__(self):
+    def __init__(self, *args):
+        args_list = list(args)
+        args_num = len(args_list)
+
         self.buildings = []
         self.min = 0
         self.max = 0
         self.width = 0
         self.height = 0
         self.area = 0
+
+        if args_num == 3:  # one building constructor
+            self.insert_building(args_list[0], args_list[1], args_list[2])
+        elif args_num == 1:  # list of buildings constructor
+            for min, h, max in zip(args_list[0::3], args_list[1::3], args_list[2::3]):
+                self.insert_building(min, h, max)
+        elif args_num == 5:  # random constructor
+            n, hmax, wmax, xmin, xmax = args_list[0], args_list[1], args_list[2], args_list[3], args_list[4]
+
+            random_list = [(xmin,h,xmin + w) for (xmin,h,w) in
+                             [(r.randrange(xmin, xmax), r.randrange(1, hmax), r.randrange(1, wmax)) for _ in range(n)]]
+            random_list.sort()
+            self.insert_buildings(random_list)
+        else:
+            error = True
 
     def __repr__(self):
         return "min    = %s\n" % self.min + \
@@ -32,33 +53,62 @@ class Skyline:
         return copy.deepcopy(self)
 
     def insert_building(self, xmin, h, xmax):
+        self.insert_buildings([(xmin, h, xmax)])
 
-        if xmin >= xmax | h < 1:
-            print("Non-valid entry!!")
-            return
+    def insert_buildings(self, buildings):
+        for (xmin, h, xmax) in buildings:
 
-        if len(self.buildings) == 0:
-            self.min = xmin
-            self.max = xmax
-            self.height = h
-            self.width = self.max - self.min
-            self.buildings = [self.Building(xmin, h, xmax)]
-        else:
-            # Check boundaries
-            self.sorted_insert(self.Building(xmin, h, xmax))
+            if xmin >= xmax | h < 1:
+                print("Non-valid entry!!")
+                return
 
-            if h > self.height:
+            if len(self.buildings) == 0:
+                self.min = xmin
+                self.max = xmax
                 self.height = h
-            if xmin < self.min | xmax > self.max:
-                if xmin < self.min:
-                    self.min = xmin
-                if xmax > self.max:
-                    self.max = xmax
+                self.width = self.max - self.min
+                self.buildings = [self.Building(xmin, h, xmax)]
+            else:
+                # Check boundaries
+                self.sorted_insert(self.Building(xmin, h, xmax))
+
+                if h > self.height:
+                    self.height = h
+                if xmin < self.min | xmax > self.max:
+                    if xmin < self.min:
+                        self.min = xmin
+                    if xmax > self.max:
+                        self.max = xmax
 
         self.update()
 
-    def sorted_insert(self, x):
+    def bisect_xmin(self, x):
+        """
+        WOW
+        """
+        lo, hi = 0, len(self.buildings)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if self.buildings[mid].xmin <= x.xmin:
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo - 1
 
+    def bisect_xmax(self, x):
+        """
+        WOW
+        """
+        lo, hi = 0, len(self.buildings)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if x.xmax > self.buildings[mid].xmax:
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo
+
+    def sorted_insert(self, x):
         buildings = self.buildings
         length = len(buildings)
 
@@ -67,9 +117,7 @@ class Skyline:
         if no_left_side:  # there is no one on the left side
             new_list_l = []
         else:
-            build_l = 0  # index of the building located in its left side
-            while build_l + 1 < length and buildings[build_l + 1].xmin <= x.xmin:
-                build_l = build_l + 1
+            build_l = self.bisect_xmin(x)
             new_list_l = buildings[:build_l]
 
         # Look for the building located in its right side
@@ -77,9 +125,7 @@ class Skyline:
         if no_right_side:  # there is no one on the right side
             new_list_r = []
         else:
-            build_r = length - 1  # index of the building located in its right side
-            while 0 <= build_r - 1 and x.xmax <= buildings[build_r - 1].xmax:
-                build_r = build_r - 1
+            build_r = self.bisect_xmax(x)
             new_list_r = buildings[build_r + 1:]
 
         # Bounds treatment
@@ -116,7 +162,7 @@ class Skyline:
                     aux[-1].update()
 
             if aux[-1].w > 0:  # if is still valid, save it
-                new_list_r.insert(0,aux[-1])
+                new_list_r.insert(0, aux[-1])
             aux = aux[:-1]
 
         # At this point, there is NO overlapping on the sides
@@ -131,17 +177,13 @@ class Skyline:
                 cpy.update()
                 # Insert the copy and b
                 if cpy.w > 0:
-                    new_list_mid = new_list_mid + [cpy, b]
-                else:
-                    new_list_mid = new_list_mid + [b]
+                    new_list_mid.append(cpy)
+                new_list_mid.append(b)
                 # Modify X: from b.xmax to x.max
                 x.xmin = b.xmax
                 x.update()
 
         self.buildings = new_list_l + new_list_mid + [x] + new_list_r
-
-    def sort_buildings(self):
-        self.buildings.sort(key=self.Building.sort_key)
 
     def union(self, s):
         if s.height > self.height:
@@ -186,7 +228,6 @@ class Skyline:
         self.buildings = [building for clone in clones for building in clone.buildings]
         self.update()
 
-
     def update(self):
         self.min = self.buildings[0].xmin
         self.max = self.buildings[-1].xmax
@@ -212,7 +253,7 @@ class Skyline:
         w : int
             Building's width.
         h : int
-            Building's heigth.
+            Building's height.
 
         Methods
         ----------
@@ -266,53 +307,6 @@ class Skyline:
             plt.bar(self.xmin + (self.w / 2), self.h, self.w)  # , color=(0, 0, 0, 1))
 
 
-x = Skyline()
-x.insert_building(1, 5, 2)
-x.insert_building(2, 2, 3)
-# x.plot()
-
-y = x.clone()
-y.insert_building(7, 9, 8)
-y.insert_building(3, 5, 12)
-y.insert_building(4, 6, 10)
-y.insert_building(13,15,15)
-y.insert_building(15,2,16)
-# y.plot()
-
-# a = Skyline()
-# a.insert_building(1,5,2)
-# a.insert_building(2,4,3)
-# a.insert_building(3,8,5)
-# a.translate(4)
-# a.insert_building(1,5,2)
-# a.invert()
-# a.translate(6)
-#
-# b = Skyline()
-# b.insert_building(9,4,11)
-# b.insert_building(2,4,3)
-# b.invert()
-# a.insert_building(3,8,5)
-# c = a.clone()
-# c.union(b)
-
-# name_user = "salu2"
-#
-# xmin1 = 2
-# xmax1 = 4
-# h1 = 8
-# w1 = xmax1 - xmin1
-#
-# xmin2 = 4
-# xmax2 = 5
-# h2 = 4
-# w2 = xmax2 - xmin2
-#
-# w = w1 + w2
-#
-# xmin1 = -xmax1 + 2 * w1
-# xmin2 = -xmax2 + 2 * w2
-#
 # plt.bar(xmin1 + (w1 / 2), h1, w1)
 # plt.bar(xmin2 + (w2 / 2), h2, w2)
 #
