@@ -1,7 +1,6 @@
-import bisect
 import copy
 import random as r
-import time
+from typing import List
 
 import matplotlib.pyplot as plt
 
@@ -25,20 +24,23 @@ class Skyline:
         self.height = 0
         self.area = 0
 
-        if args_num == 3:  # one building constructor
+        if args_num == 0:
+            pass
+        elif args_num == 3:  # one building constructor
             self.insert_building(args_list[0], args_list[1], args_list[2])
         elif args_num == 1:  # list of buildings constructor
-            for min, h, max in zip(args_list[0::3], args_list[1::3], args_list[2::3]):
-                self.insert_building(min, h, max)
+            for xmin, h, xmax in zip(args_list[0::3], args_list[1::3], args_list[2::3]):
+                self.insert_building(xmin, h, xmax)
         elif args_num == 5:  # random constructor
             n, hmax, wmax, xmin, xmax = args_list[0], args_list[1], args_list[2], args_list[3], args_list[4]
 
-            random_list = [(xmin,h,xmin + w) for (xmin,h,w) in
-                             [(r.randrange(xmin, xmax), r.randrange(1, hmax), r.randrange(1, wmax)) for _ in range(n)]]
+            random_list = [(xmin, h, xmin + w) for (xmin, h, w) in
+                           [(r.randrange(xmin, xmax), r.randrange(1, hmax), r.randrange(1, wmax)) for _ in range(n)]]
             random_list.sort()
             self.insert_buildings(random_list)
         else:
-            error = True
+            print("Wrong Skyline constructor arguments!")
+            # error = True
 
     def __repr__(self):
         return "min    = %s\n" % self.min + \
@@ -110,7 +112,6 @@ class Skyline:
 
     def sorted_insert(self, x):
         buildings = self.buildings
-        length = len(buildings)
 
         # Look for the building located in its left side
         no_left_side = x.xmin < buildings[0].xmin
@@ -186,21 +187,59 @@ class Skyline:
         self.buildings = new_list_l + new_list_mid + [x] + new_list_r
 
     def union(self, s):
-        if s.height > self.height:
-            self.height = s.height
-        if s.min < self.min or s.max > self.max:
-            if s.min < self.min:
-                self.min = s.min
-            if s.max > self.max:
-                self.max = s.max
-        self.update()
-
         for b in s.buildings:
             self.insert_building(b.xmin, b.h, b.xmax)
 
     def intersection(self, s):
-        if s.max <= self.min or s.min >= self.max:
-            return
+        l1: List[Skyline.Building]
+        l2: List[Skyline.Building]
+        l3: List[Skyline.Building]
+        l1, l2, l3 = self.buildings, copy.deepcopy(s.buildings), []
+        while l1 and l2:
+            e1, e2, end = l1[0], l2[0], False
+            l1 , l2 = l1[1:], l2[1:]
+
+            # Overlapping condition
+            # If at some point any of the lists becomes empty, then there is no overlapping, so we must end.
+            while not (e1.xmax > e2.xmin):
+                if l1:
+                    e1 = l1[0]
+                    l1 = l1[1:]
+                else:
+                    end = True
+                    break
+            if end: break
+
+            while not (e2.xmax > e1.xmin):
+                if l2:
+                    e2 = l2[0]
+                    l2 = l2[1:]
+                else:
+                    end = True
+                    break
+            if end: break
+
+            # Compute overlapped building
+            xmin = max(e1.xmin, e2.xmin)
+            xmax = min(e1.xmax, e2.xmax)
+            h = min(e1.h, e2.h)
+
+            # Save overlapped building
+            e3 = Skyline.Building(xmin, h, xmax)
+            l3.append(e3)
+
+            # We must push into de lists the remaining part of the intersected buildings (just the right one).
+            if e1.xmax < e2.xmax:
+                e2.xmin = e3.xmax
+                e2.update()
+                l2.insert(0, e2)
+            elif e1.xmax > e2.xmax:
+                e1.xmin = e3.xmax
+                e1.update()
+                l1.insert(0, e1)
+
+        self.buildings = l3
+        self.update()
 
     def invert(self):
         for b in self.buildings:
@@ -229,10 +268,16 @@ class Skyline:
         self.update()
 
     def update(self):
-        self.min = self.buildings[0].xmin
-        self.max = self.buildings[-1].xmax
-        self.width = self.max - self.min
-        self.area = sum([b.area() for b in self.buildings])
+        if self.buildings:
+            self.min = self.buildings[0].xmin
+            self.max = self.buildings[-1].xmax
+            self.width = self.max - self.min
+            self.area = sum([b.area() for b in self.buildings])
+        else:
+            self.min = 0
+            self.max = 0
+            self.width = 0
+            self.area = 0
 
     def plot(self):
         plt.figure()
@@ -301,10 +346,10 @@ class Skyline:
             self.w = self.xmax - self.xmin
 
         def sort_key(self):
-            return (self.xmin, self.max, self.h)
+            return self.xmin, self.max, self.h
 
         def plot(self):
-            plt.bar(self.xmin + (self.w / 2), self.h, self.w)  # , color=(0, 0, 0, 1))
+            plt.bar(self.xmin + (self.w / 2), self.h, self.w, color=(0, 0, 0, 1))
 
 
 # plt.bar(xmin1 + (w1 / 2), h1, w1)
