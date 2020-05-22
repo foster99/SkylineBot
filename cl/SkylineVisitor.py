@@ -16,6 +16,12 @@ class SkylineVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by SkylineParser#asigancion.
     def visitAsigancion(self, ctx:SkylineParser.AsigancionContext):
+        l = [w for w in ctx.children]
+        print("--------------------")
+        print("ID: ", l[0].getText())
+        print("operator: ", l[1].getText())
+        print("Skyline: ", l[2].getText())
+        print("--------------------")
         return self.visitChildren(ctx)
 
 

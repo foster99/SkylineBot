@@ -11,11 +11,19 @@ class Skyline:
     ----------
     buildings : [Buildings]
         List of buildings which conform the skyline.
+    min : int
+        Skyline's starting x-coord.
+    max : int
+        Skyline's ending x-coord.
+    width : int
+        Skyline's width.
+    height : int
+        Skyline's height.
+    area : int
+        Skyline's area.
     """
 
     def __init__(self, *args):
-        args_list = list(args)
-        args_num = len(args_list)
 
         self.buildings = []
         self.min = 0
@@ -24,20 +32,32 @@ class Skyline:
         self.height = 0
         self.area = 0
 
+        args_list = list(args)
+        args_num = len(args_list)
+
+        # Empty constructor
         if args_num == 0:
             pass
-        elif args_num == 3:  # one building constructor
+
+        # One building constructor
+        elif args_num == 3:
             self.insert_building(args_list[0], args_list[1], args_list[2])
-        elif args_num == 1:  # list of buildings constructor
+
+        # list of buildings constructor
+        elif args_num == 1:
             for xmin, h, xmax in zip(args_list[0::3], args_list[1::3], args_list[2::3]):
                 self.insert_building(xmin, h, xmax)
-        elif args_num == 5:  # random constructor
+
+        # Random constructor
+        elif args_num == 5:
             n, hmax, wmax, xmin, xmax = args_list[0], args_list[1], args_list[2], args_list[3], args_list[4]
 
             random_list = [(xmin, h, xmin + w) for (xmin, h, w) in
-                           [(r.randrange(xmin, xmax), r.randrange(1, hmax), r.randrange(1, wmax)) for _ in range(n)]]
+                           [(r.randrange(xmin, xmax), r.randrange(0, hmax), r.randrange(1, wmax)) for _ in range(n)]]
             random_list.sort()
             self.insert_buildings(random_list)
+
+        # Incorrect arguments
         else:
             print("Wrong Skyline constructor arguments!")
             # error = True
@@ -52,17 +72,31 @@ class Skyline:
                str(self.buildings)
 
     def clone(self):
+        """
+        Clones itself.
+        :return: Returns a clone of itself (another Skyline).
+        """
         return copy.deepcopy(self)
 
     def insert_building(self, xmin, h, xmax):
+        """
+        Inserts one new building with the specified parameters in the skyline.
+        :param xmin: Building's starting x coord.
+        :param h: Building's height.
+        :param xmax: Building's ending x coord.
+        """
         self.insert_buildings([(xmin, h, xmax)])
 
     def insert_buildings(self, buildings):
+        """
+        Inserts a set of buildings.
+        :param buildings: List of buildings specified as tuples of their parameters (xmin,h,xmax).
+        """
         for (xmin, h, xmax) in buildings:
 
             if xmin >= xmax | h < 1:
                 print("Non-valid entry!!")
-                return
+                continue
 
             if len(self.buildings) == 0:
                 self.min = xmin
@@ -86,7 +120,9 @@ class Skyline:
 
     def bisect_xmin(self, x):
         """
-        WOW
+        Binary search of the Building of the list located on x's left side. (in terms of xmin).
+        :param x: Building which we are searching.
+        :return: Returns de index of the Building located on x's left side.
         """
         lo, hi = 0, len(self.buildings)
         while lo < hi:
@@ -99,7 +135,9 @@ class Skyline:
 
     def bisect_xmax(self, x):
         """
-        WOW
+        Binary search of the Building of the list located on x's right side. (in terms of xmax).
+        :param x: Building which we are searching.
+        :return: Returns de index of the Building located on x's right side.
         """
         lo, hi = 0, len(self.buildings)
         while lo < hi:
@@ -111,7 +149,12 @@ class Skyline:
         return lo
 
     def sorted_insert(self, x):
+        """
+        Inserts the Building in a sorted list, and maintains it sorted and without overlapping.
+        :param x: Building which we are inserting.
+        """
         buildings = self.buildings
+        build_r, build_l = 0, 0
 
         # Look for the building located in its left side
         no_left_side = x.xmin < buildings[0].xmin
@@ -171,7 +214,8 @@ class Skyline:
 
         new_list_mid = []
         for b in aux:
-            if b.w > 0 and b.h > x.h:  # As b is taller than x, we must divide X in two parts, and insert b in the middle.
+            if b.w > 0 and b.h > x.h:
+                # As b is taller than x, we must divide X in two parts, and insert b in the middle.
                 # Create a copy of X: from x.xmin to b.xmin
                 cpy = copy.deepcopy(x)
                 cpy.xmax = b.xmin
@@ -187,17 +231,25 @@ class Skyline:
         self.buildings = new_list_l + new_list_mid + [x] + new_list_r
 
     def union(self, s):
+        """
+        Makes the union between 'self' and s Skylines, and stores the result on 'self'.
+        :param s: Skyline with which we are merging the original.
+        """
         for b in s.buildings:
             self.insert_building(b.xmin, b.h, b.xmax)
 
     def intersection(self, s):
+        """
+        Makes the intersection between 'self' and s Skylines, and stores the result on 'self'.
+        :param s: Skyline with which we are intersecting the original.
+        """
         l1: List[Skyline.Building]
         l2: List[Skyline.Building]
         l3: List[Skyline.Building]
         l1, l2, l3 = self.buildings, copy.deepcopy(s.buildings), []
         while l1 and l2:
             e1, e2, end = l1[0], l2[0], False
-            l1 , l2 = l1[1:], l2[1:]
+            l1, l2 = l1[1:], l2[1:]
 
             # Overlapping condition
             # If at some point any of the lists becomes empty, then there is no overlapping, so we must end.
@@ -208,7 +260,8 @@ class Skyline:
                 else:
                     end = True
                     break
-            if end: break
+            if end:
+                break
 
             while not (e2.xmax > e1.xmin):
                 if l2:
@@ -217,7 +270,8 @@ class Skyline:
                 else:
                     end = True
                     break
-            if end: break
+            if end:
+                break
 
             # Compute overlapped building
             xmin = max(e1.xmin, e2.xmin)
@@ -242,21 +296,32 @@ class Skyline:
         self.update()
 
     def invert(self):
+        """
+        Inverts the skyline over the x axis.
+        """
         for b in self.buildings:
             b.invert(self.width, self.min)
 
         self.buildings.reverse()
 
     def translate(self, offset):
+        """
+        Translates the Skyline over de x-axis an specified offset.
+        :param offset: Offset (positive or negative) are we displacing the Skyline over the x-axis.
+        """
         self.min += offset
         self.max += offset
         for b in self.buildings:
             b.translate(offset)
 
     def replicate(self, n):
+        """
+        Replicates the skyline along the x-axis n times.
+        :param n: Times we want to replicate the skyline.
+        """
         if n < 2:
             if n == 0:
-                self.buildings = []
+                self.clear()
             return
 
         total = self.width
@@ -268,18 +333,31 @@ class Skyline:
         self.update()
 
     def update(self):
+        """
+        Update the Skyline values based on the current buildings inside of self.buildings.
+        """
         if self.buildings:
             self.min = self.buildings[0].xmin
             self.max = self.buildings[-1].xmax
             self.width = self.max - self.min
             self.area = sum([b.area() for b in self.buildings])
         else:
-            self.min = 0
-            self.max = 0
-            self.width = 0
-            self.area = 0
+            self.clear()
+
+    def clear(self):
+        """
+        Clears the Skyline. After calling it, the Skyline does not have any building inside of it.
+        """
+        self.min = 0
+        self.max = 0
+        self.width = 0
+        self.area = 0
+        self.buildings = []
 
     def plot(self):
+        """
+        Generates the associated plot to the Skyline.
+        """
         plt.figure()
         for b in self.buildings:
             b.plot()
@@ -336,21 +414,31 @@ class Skyline:
             self.xmax = self.xmin + self.w
 
         def translate(self, offset):
+            """
+            Translates the Building over de x-axis an specified offset.
+            :param offset: Offset (positive or negative) are we displacing the Building over the x-axis.
+            """
             self.xmin += offset
             self.xmax += offset
 
         def area(self):
+            """
+            Computes the Building's area.
+            :return: Returns the Building's area.
+            """
             return self.h * self.w
 
         def update(self):
+            """
+            Recomputes the building's width.
+            """
             self.w = self.xmax - self.xmin
 
-        def sort_key(self):
-            return self.xmin, self.max, self.h
-
         def plot(self):
+            """
+            Generates the associated bar graphic to the buildings, and adds it to the current plt figure.
+            """
             plt.bar(self.xmin + (self.w / 2), self.h, self.w, color=(0, 0, 0, 1))
-
 
 # plt.bar(xmin1 + (w1 / 2), h1, w1)
 # plt.bar(xmin2 + (w2 / 2), h2, w2)

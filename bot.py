@@ -1,11 +1,17 @@
 # importa l'API de Telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from antlr4 import *
+from cl.SkylineLexer import SkylineLexer as Lexer
+from cl.SkylineParser import SkylineParser as Parser
+from cl.SkylineVisitor import SkylineVisitor as Visitor
 
 
 # defineix una funció que saluda i que s'executarà quan el bot rebi el missatge /start
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Bienvenido a SkyLineBot!")
+    print(context.user_data)
     # Inicializaciones
+
 
 def help(update, context):
     return 0
@@ -30,25 +36,46 @@ def save(update, context):
 def load(update, context):
     return 0
 
+
 def msg(update, context):
     return 0
 
+def compile_command(update, context):
+    command = update.message.text
 
-from antlr4 import *
-from cl.SkylineLexer import SkylineLexer as Lexer
-from cl.SkylineParser import SkylineParser as Parser
-from cl.SkylineVisitor import SkylineVisitor as Visitor
+    input_stream = InputStream(command)
+    print("Command [", command, "] received.")
 
-input_stream = InputStream(input('? '))
+    lexer = Lexer(input_stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = Parser(token_stream)
+    tree = parser.root()
 
-lexer = Lexer(input_stream)
-token_stream = CommonTokenStream(lexer)
-parser = Parser(token_stream)
-tree = parser.root()
+    visitor = Visitor()
+    visitor.visit(tree)
+    # TODO: pillar el retorno
 
-visitor = Visitor()
-visitor.visit(tree)
+# Set Token
+TOKEN = open('token.txt').read().strip()
 
+# Initialize Telegram elements
+updater = Updater(token=TOKEN, use_context=True)
+dispatcher = updater.dispatcher
+
+# Link bot commands to functions
+dispatcher.add_handler(CommandHandler('start', start))
+dispatcher.add_handler(CommandHandler('help', help))
+dispatcher.add_handler(CommandHandler('author', author))
+dispatcher.add_handler(CommandHandler('lst', lst))
+dispatcher.add_handler(CommandHandler('clean', clean))
+dispatcher.add_handler(CommandHandler('save', save))
+dispatcher.add_handler(CommandHandler('load', load))
+dispatcher.add_handler(MessageHandler(Filters.text, compile_command))
+
+# Turn on the bot
+updater.start_polling()
+
+# Exception treatment
 # def suma(update, context):
 #     try:
 #         x = float(context.args[0])
@@ -62,24 +89,3 @@ visitor.visit(tree)
 #         context.bot.send_message(
 #             chat_id=update.effective_chat.id,
 #             text='💣')
-
-
-# Establecemos el TOKEN en base al fichero token.txt
-TOKEN = open('token.txt').read().strip()
-
-# Inicializacion de elementos de Telegram
-updater = Updater(token=TOKEN, use_context=True)
-dispatcher = updater.dispatcher
-
-# Linkeo de los comandos que recibira el bot a las respectivas funciones
-dispatcher.add_handler(CommandHandler('start', start))
-dispatcher.add_handler(CommandHandler('help', help))
-dispatcher.add_handler(CommandHandler('author', author))
-dispatcher.add_handler(CommandHandler('lst', lst))
-dispatcher.add_handler(CommandHandler('clean', clean))
-dispatcher.add_handler(CommandHandler('save', save))
-dispatcher.add_handler(CommandHandler('load', load))
-dispatcher.add_handler(MessageHandler(Filters.text, msg))
-
-# engega el bot
-updater.start_polling()
