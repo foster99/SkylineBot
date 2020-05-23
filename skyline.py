@@ -1,4 +1,5 @@
 import copy
+import io
 import random as r
 from typing import List
 
@@ -188,6 +189,14 @@ class Skyline:
                     x.xmin = aux[0].xmax
                     x.update()
                 else:  # The new one is taller
+                    # Save the no-overlapped right part if exists
+                    right_part = copy.deepcopy(aux[0])
+                    right_part.xmin = x.xmax
+                    right_part.update()
+                    if right_part.w > 0:
+                        aux.insert(1,right_part)
+
+                    # Change the left side
                     aux[0].xmax = x.xmin
                     aux[0].update()
 
@@ -207,6 +216,7 @@ class Skyline:
 
             if aux[-1].w > 0:  # if is still valid, save it
                 new_list_r.insert(0, aux[-1])
+
             aux = aux[:-1]
 
         # At this point, there is NO overlapping on the sides
@@ -361,7 +371,11 @@ class Skyline:
         plt.figure()
         for b in self.buildings:
             b.plot()
-        plt.savefig("tmp.png")
+
+    def save_plot(self, filename):
+        self.plot()
+        plt.title("Skyline")
+        plt.savefig(filename)
 
     class Building:
         """
@@ -439,23 +453,3 @@ class Skyline:
             Generates the associated bar graphic to the buildings, and adds it to the current plt figure.
             """
             plt.bar(self.xmin + (self.w / 2), self.h, self.w, color=(0, 0, 0, 1))
-
-# plt.bar(xmin1 + (w1 / 2), h1, w1)
-# plt.bar(xmin2 + (w2 / 2), h2, w2)
-#
-# plt.savefig(name_user + "_tmp.png")  # Guardar en un archivo
-
-# Guardar imagen en un objeto
-# import io
-# from PIL import Image
-# import matplotlib.pyplot as plt
-#
-# plt.figure()
-# plt.plot([1, 2])
-# plt.title("test")
-# buf = io.BytesIO()
-# plt.savefig(buf, format='png')
-# buf.seek(0)
-# im = Image.open(buf)
-# im.show()
-# buf.close()
