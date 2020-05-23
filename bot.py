@@ -6,10 +6,22 @@ from cl.SkylineParser import SkylineParser as Parser
 from cl.SkylineVisitor import SkylineVisitor as Visitor
 
 
-# defineix una funció que saluda i que s'executarà quan el bot rebi el missatge /start
+def get_next_id() -> int:
+    global next_user_id
+    next_user_id += 1
+    return next_user_id
+
+
+def id_to_str(id: int) -> str:
+    return str(id).zfill(4)
+
+# ToDo: Write explicit commands code.
+
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Bienvenido a SkyLineBot!")
-    print(context.user_data)
+    context.user_data['id'] = get_next_id()
+    context.user_data['skylines'] = {}
+
     # Inicializaciones
 
 
@@ -20,6 +32,7 @@ def help(update, context):
 def author(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="SkyLineBot!\n @ Edgar Perez Blanco, 2020\n "
                                                                     "edgar.perez.blanco@est.fib.upc.edu")
+
 
 def lst(update, context):
     return 0
@@ -36,13 +49,9 @@ def save(update, context):
 def load(update, context):
     return 0
 
-
-def msg(update, context):
-    return 0
-
 def compile_command(update, context):
-    command = update.message.text
 
+    command = update.message.text
     input_stream = InputStream(command)
     print("Command [", command, "] received.")
 
@@ -52,8 +61,20 @@ def compile_command(update, context):
     tree = parser.root()
 
     visitor = Visitor()
-    visitor.visit(tree)
-    # TODO: pillar el retorno
+    (name, skln) = visitor.visit(tree)
+    # ToDo: Give the visitor the ability of consult the dictionary.
+    send_info(update, context, skln)
+
+def send_info(update, context, skln):
+
+    picture_path = id_to_str(context.user_data['id']) + ".png"
+    skln.save_plot(picture_path)
+    skln_info = 'area: ' + str(skln.area) + '\n' + 'alçada: ' + str(skln.height)
+
+    context.bot.send_photo(chat_id=update.message.chat_id, photo=open(picture_path, 'rb'))
+    context.bot.send_message(chat_id=update.message.chat_id, text=skln_info)
+
+    # ToDo: Delete .png file after sending the image.
 
 # Set Token
 TOKEN = open('token.txt').read().strip()
@@ -72,9 +93,11 @@ dispatcher.add_handler(CommandHandler('save', save))
 dispatcher.add_handler(CommandHandler('load', load))
 dispatcher.add_handler(MessageHandler(Filters.text, compile_command))
 
+# Initialize user manager
+next_user_id = 0
+
 # Turn on the bot
 updater.start_polling()
-
 # Exception treatment
 # def suma(update, context):
 #     try:
