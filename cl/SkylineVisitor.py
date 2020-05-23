@@ -15,6 +15,9 @@ else:
 
 class SkylineVisitor(ParseTreeVisitor):
 
+    def __init__(self, user_skylines):
+        self.user_skylines = user_skylines
+
     # Visit a parse tree produced by SkylineParser#root.
     def visitRoot(self, ctx: SkylineParser.RootContext):
         nodes = [w for w in ctx.children]
@@ -25,13 +28,16 @@ class SkylineVisitor(ParseTreeVisitor):
         nodes = [w for w in ctx.children]
         name: str = nodes[0].getText()
         new_skyline: Skyline = self.visit(nodes[2])
-        return name, new_skyline
+        print(name, self.user_skylines)
+        self.user_skylines[name] = new_skyline
+        print(name, self.user_skylines)
+        return new_skyline
 
     # Visit a parse tree produced by SkylineParser#temp_skyline.
     def visitTemp_skyline(self, ctx: SkylineParser.Temp_skylineContext):
         nodes = [w for w in ctx.children]
         new_skyline: Skyline = self.visit(nodes[0])
-        return "tmp", new_skyline
+        return new_skyline
 
     # Visit a parse tree produced by SkylineParser#skyline.
     def visitSkyline(self, ctx: SkylineParser.SkylineContext) -> Skyline:
@@ -69,13 +75,17 @@ class SkylineVisitor(ParseTreeVisitor):
             return skln
         if ctx.existing_skyline():
             name: str = nodes[0].getText()
-            # TODO: Tratar los skylines existentes
+            skln = self.user_skylines[name]
+            if skln is None:
+                print("Skyline inexistente!!")
+            return skln
         if ctx.random_skyline():
             return self.visit(nodes[1])
         if ctx.building_list():
             skln: Skyline = Skyline()
             buildings = self.visit(nodes[1])
             skln.insert_buildings(buildings)
+            return skln
         if ctx.building():
             (xmin, h, xmax) = self.visit(nodes[1])
             return Skyline(xmin, h, xmax)
@@ -121,7 +131,7 @@ class SkylineVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by SkylineParser#building_list.
     def visitBuilding_list(self, ctx: SkylineParser.Building_listContext):
         nodes = [w for w in ctx.children]
-        return [self.visit(building) for building in nodes[0::2]]  # Take the numbers
+        return [self.visit(building) for building in nodes[1::3]]  # Take the numbers
 
     # Visit a parse tree produced by SkylineParser#mirror.
     def visitMirror(self, ctx: SkylineParser.MirrorContext):

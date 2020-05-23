@@ -15,6 +15,7 @@ def get_next_id() -> int:
 def id_to_str(id: int) -> str:
     return str(id).zfill(4)
 
+
 # ToDo: Write explicit commands code.
 
 def start(update, context):
@@ -49,8 +50,8 @@ def save(update, context):
 def load(update, context):
     return 0
 
-def compile_command(update, context):
 
+def compile_command(update, context):
     command = update.message.text
     input_stream = InputStream(command)
     print("Command [", command, "] received.")
@@ -60,13 +61,12 @@ def compile_command(update, context):
     parser = Parser(token_stream)
     tree = parser.root()
 
-    visitor = Visitor()
-    (name, skln) = visitor.visit(tree)
-    # ToDo: Give the visitor the ability of consult the dictionary.
+    visitor = Visitor(context.user_data['skylines'])
+    skln = visitor.visit(tree)
     send_info(update, context, skln)
 
-def send_info(update, context, skln):
 
+def send_info(update, context, skln):
     picture_path = id_to_str(context.user_data['id']) + ".png"
     skln.save_plot(picture_path)
     skln_info = 'area: ' + str(skln.area) + '\n' + 'alçada: ' + str(skln.height)
@@ -75,6 +75,7 @@ def send_info(update, context, skln):
     context.bot.send_message(chat_id=update.message.chat_id, text=skln_info)
 
     # ToDo: Delete .png file after sending the image.
+
 
 # Set Token
 TOKEN = open('token.txt').read().strip()
