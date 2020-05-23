@@ -27,7 +27,7 @@ existing_skyline : WORD;
 random_skyline : NUM ',' NUM ',' NUM ',' NUM ',' NUM ;
 building : NUM ',' NUM ',' NUM;
 
-building_list : '(' building ')' (',(' building ')')* ;
+building_list : '(' building ')' (',' '(' building ')')* ;
 
 NUM : [0-9]+;
 WS  : [ \n]+ -> skip;

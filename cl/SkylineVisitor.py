@@ -14,7 +14,8 @@ else:
 # This class defines a complete generic visitor for a parse tree produced by SkylineParser.
 
 class SkylineVisitor(ParseTreeVisitor):
-
+    # ToDo: Implement pickle
+    # ToDo: Implement exception control
     def __init__(self, user_skylines):
         self.user_skylines = user_skylines
 
@@ -88,6 +89,12 @@ class SkylineVisitor(ParseTreeVisitor):
             return skln
         if ctx.building():
             (xmin, h, xmax) = self.visit(nodes[1])
+            if xmax <= xmin:
+                print("Invalid x-coord range!!")
+                return Skyline()
+            if h < 1:
+                print("Invalid height!!")
+                return Skyline()
             return Skyline(xmin, h, xmax)
 
         # Between brackets skyline
@@ -131,7 +138,7 @@ class SkylineVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by SkylineParser#building_list.
     def visitBuilding_list(self, ctx: SkylineParser.Building_listContext):
         nodes = [w for w in ctx.children]
-        return [self.visit(building) for building in nodes[1::3]]  # Take the numbers
+        return [self.visit(nodes[1])] + [self.visit(building) for building in nodes[5::4]]  # Take the numbers
 
     # Visit a parse tree produced by SkylineParser#mirror.
     def visitMirror(self, ctx: SkylineParser.MirrorContext):

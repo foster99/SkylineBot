@@ -36,7 +36,9 @@ def author(update, context):
 
 
 def lst(update, context):
-    return 0
+    for name, skln in context.user_data['skylines'].items():
+        msg = str(name) + ":\t Area = " + str(skln.area)
+        context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
 
 
 def clean(update, context):
