@@ -1,25 +1,33 @@
 grammar Skyline; //
 
-root : (asigancion | skyline) EOF;
+root : (assignment | temp_skyline) EOF;
 
-asigancion :
-      WORD ':=' skyline
-    | WORD ':=' '[' skyline_list ']'
-    | WORD ':=' '{' NUM ',' NUM ',' NUM ',' NUM ',' NUM '}'
-    ;
+assignment : WORD ':=' skyline;
+temp_skyline : skyline;
 
 skyline :
       '(' skyline ')'
-    | '-' skyline
-    | skyline ('+'|'-'|'*') NUM
-    | skyline ('+'|'*') skyline
-    | '[' skyline_list ']'
-    | skyline_root
+    | mirror skyline
+    | skyline (translate_r|translate_l|replicate) NUM
+    | skyline (union|intersection) skyline
+    | existing_skyline
+    | '{' random_skyline '}'
+    | '[' building_list ']'
+    | '(' building ')'
     ;
 
-skyline_root : ('(' NUM ',' NUM ',' NUM ')') | WORD;
+mirror : '-';
+intersection: '*';
+union : '+';
+translate_r : '+';
+translate_l : '-';
+replicate : '*';
 
-skyline_list : skyline (',' skyline)* ;
+existing_skyline : WORD;
+random_skyline : NUM ',' NUM ',' NUM ',' NUM ',' NUM ;
+building : NUM ',' NUM ',' NUM;
+
+building_list : building (',' building)* ;
 
 NUM : [0-9]+;
 WS  : [ \n]+ -> skip;
