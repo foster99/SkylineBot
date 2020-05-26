@@ -40,6 +40,14 @@ class Skyline:
         if args_num == 0:
             pass
 
+        elif args_num == 1 and isinstance(args_list[0], Skyline):
+            self.buildings = copy.deepcopy(args_list[0].buildings)
+            self.min = args_list[0].min
+            self.max = args_list[0].max
+            self.width = args_list[0].width
+            self.height = args_list[0].height
+            self.area = args_list[0].area
+
         # One building constructor
         elif args_num == 3:
             self.insert_building(args_list[0], args_list[1], args_list[2])
@@ -453,3 +461,9 @@ class Skyline:
             Generates the associated bar graphic to the buildings, and adds it to the current plt figure.
             """
             plt.bar(self.xmin + (self.w / 2), self.h, self.w, color=(0, 0, 0, 1))
+
+a = Skyline(1,4,5)
+b = Skyline(a)
+
+print(a)
+print(b)

@@ -28,7 +28,7 @@ class SkylineVisitor(ParseTreeVisitor):
     def visitAssignment(self, ctx: SkylineParser.AssignmentContext):
         nodes = [w for w in ctx.children]
         name: str = nodes[0].getText()
-        new_skyline: Skyline = self.visit(nodes[2])
+        new_skyline = Skyline(self.visit(nodes[2]))
         print(name, self.user_skylines)
         self.user_skylines[name] = new_skyline
         print(name, self.user_skylines)
@@ -37,41 +37,41 @@ class SkylineVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by SkylineParser#temp_skyline.
     def visitTemp_skyline(self, ctx: SkylineParser.Temp_skylineContext):
         nodes = [w for w in ctx.children]
-        new_skyline: Skyline = self.visit(nodes[0])
+        new_skyline = Skyline(self.visit(nodes[0]))
         return new_skyline
 
     # Visit a parse tree produced by SkylineParser#skyline.
     def visitSkyline(self, ctx: SkylineParser.SkylineContext) -> Skyline:
         nodes = [w for w in ctx.children]
         if ctx.mirror():
-            skln: Skyline = self.visit(nodes[1])
+            skln = Skyline(self.visit(nodes[1]))
             skln.invert()
             return skln
         if ctx.translate_r():
-            skln: Skyline = self.visit(nodes[0])
+            skln = Skyline(self.visit(nodes[0]))
             offset = int(nodes[2].getText())
             skln.translate(offset)
             return skln
         if ctx.translate_l():
-            skln: Skyline = self.visit(nodes[0])
+            skln = Skyline(self.visit(nodes[0]))
             offset = - int(nodes[2].getText())
             skln.translate(offset)
             return skln
         if ctx.replicate():
-            skln: Skyline = self.visit(nodes[0])
+            skln = Skyline(self.visit(nodes[0]))
             n = int(nodes[2].getText())
             skln.replicate(n)
             return skln
         if ctx.union():
             skln1: Skyline = self.visit(nodes[0])
             skln2: Skyline = self.visit(nodes[2])
-            skln: Skyline = copy.deepcopy(skln1)
+            skln = skln1.clone()
             skln.union(skln2)
             return skln
         if ctx.intersection():
             skln1: Skyline = self.visit(nodes[0])
             skln2: Skyline = self.visit(nodes[2])
-            skln: Skyline = copy.deepcopy(skln1)
+            skln = skln1.clone()
             skln.intersection(skln2)
             return skln
         if ctx.existing_skyline():
