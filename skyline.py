@@ -461,9 +461,3 @@ class Skyline:
             Generates the associated bar graphic to the buildings, and adds it to the current plt figure.
             """
             plt.bar(self.xmin + (self.w / 2), self.h, self.w, color=(0, 0, 0, 1))
-
-a = Skyline(1,4,5)
-b = Skyline(a)
-
-print(a)
-print(b)

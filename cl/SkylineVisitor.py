@@ -14,8 +14,6 @@ else:
 # This class defines a complete generic visitor for a parse tree produced by SkylineParser.
 
 class SkylineVisitor(ParseTreeVisitor):
-    # ToDo: Implement pickle
-    # ToDo: Implement exception control
     def __init__(self, user_skylines):
         self.user_skylines = user_skylines
 
