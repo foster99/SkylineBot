@@ -1,4 +1,5 @@
 # importa l'API de Telegram
+from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from antlr4 import *
 from cl.SkylineLexer import SkylineLexer as Lexer
@@ -15,8 +16,9 @@ def get_next_id() -> int:
 def id_to_str(id: int) -> str:
     return str(id).zfill(4)
 
+## COMMANDS
 
-# ToDo: Write explicit commands code.
+# Initilization
 
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Bienvenido a SkyLineBot!")
@@ -26,14 +28,12 @@ def start(update, context):
     # Inicializaciones
 
 
-def help(update, context):
-    return 0
-
-
 def author(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="SkyLineBot!\n @ Edgar Perez Blanco, 2020\n "
                                                                     "edgar.perez.blanco@est.fib.upc.edu")
 
+
+# Skylines management zone
 
 def lst(update, context):
     for name, skln in context.user_data['skylines'].items():
@@ -52,6 +52,70 @@ def save(update, context):
 def load(update, context):
     return 0
 
+# End of Skylines management zone
+
+# HELP ZONE
+
+def help(update, context):
+    msg = ''' 
+*SkylineBot* 
+Bot de Telegram para representar Skylines. Con el podras facilmente disenar tu propio Skyline introduciendo eficicios \
+y operando entre ellos, ya sea uniendo diferentes Skylines, replicandolos, desplazandolos ... e incluso guardarlos \
+para usarlos posteriormente. Para comenzar solo debes introdcuir el comando /start y empezar a manipular tus Skylines.
+
+        Si quieres aprender las distintas funcionalidades puedes consultar las siguientes guias:
+        1) /comoDefinirUnSkyline
+        2) /tiposDeSkylines
+        3) /comoGuardarYCargarSkylines
+        4) /listaDeComandosDisponibles
+'''
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.MARKDOWN)
+
+
+def command_lst(update, context):
+    msg = ''' salu2'''
+    context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.MARKDOWN)
+
+
+def guardar_y_cargar_skylines(update, context):
+    msg = '''
+    Como definir un Skyline:
+        '''
+    context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.MARKDOWN)
+
+
+def como_definir_un_skyline(update, context):
+    msg = '''
+Como definir un Skyline:
+1) *Skyline simple*: Se introduce un solo edificio.
+2) *Skyline compuesto*: Se introduce un conjunto de edificios.
+3) *Skyline aleatorio*: Se genera un conjunto de edificios de forma aleatoria dadas unas pautas.
+
+    Guia para definir Skyline:
+        1) /simple
+        2) /compuesto
+        3) /aleatorio
+    '''
+    context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.MARKDOWN)
+
+
+def tipos_de_skylines(update, context):
+    msg = '''
+Tipos de Skyline a introducir:
+1) *Skyline temporal*: se visualiza el resultado del Skyline definido pero no se guarda.
+2) *Skyline permamente*: se visualiza el resultado del Skyline definido y se guarda con un nombre dado. 
+
+    Guia sobre tipos de Skyline:
+        1) /temporal
+        2) /permanente
+'''
+    context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.MARKDOWN)
+
+
+# END OF HELP ZONE
+
+## END OF COMMANDS
 
 def compile_command(update, context):
     command = update.message.text
@@ -94,6 +158,11 @@ dispatcher.add_handler(CommandHandler('lst', lst))
 dispatcher.add_handler(CommandHandler('clean', clean))
 dispatcher.add_handler(CommandHandler('save', save))
 dispatcher.add_handler(CommandHandler('load', load))
+dispatcher.add_handler(CommandHandler('comoDefinirUnSkyline', como_definir_un_skyline))
+dispatcher.add_handler(CommandHandler('tiposDeSkylines', tipos_de_skylines))
+dispatcher.add_handler(CommandHandler('comoGuardarYCargarSkylines', guardar_y_cargar_skylines))
+dispatcher.add_handler(CommandHandler('listaDeComandosDisponibles', command_lst))
+
 dispatcher.add_handler(MessageHandler(Filters.text, compile_command))
 
 # Initialize user manager
