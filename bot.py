@@ -98,7 +98,7 @@ Si quieres aprender las distintas funcionalidades puedes consultar las siguiente
 def command_lst(update, context):
     msg = '''*Lista de comandos*
 
-/start :`     (Re)Inicia la conversacion con el Bot.`
+/start :`     Inicia la conversacion con el Bot.`
 /help :`      Consulta el manual de ayuda e informacion del bot.`
 /author :`    Informacion sobre el autor del bot.`
 /lst :`        Lista de Skylines definidos activos.`

@@ -1,5 +1,4 @@
 import copy
-import io
 import random as r
 from typing import List
 
