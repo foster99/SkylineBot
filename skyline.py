@@ -1,7 +1,6 @@
 import copy
 import random as r
 from typing import List
-
 import matplotlib.pyplot as plt
 
 
@@ -201,7 +200,7 @@ class Skyline:
                     right_part.xmin = x.xmax
                     right_part.update()
                     if right_part.w > 0:
-                        aux.insert(1,right_part)
+                        aux.insert(1, right_part)
 
                     # Change the left side
                     aux[0].xmax = x.xmin

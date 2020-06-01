@@ -5,9 +5,22 @@ y operando entre ellos, ya sea uniendo diferentes Skylines, replicandolos, despl
 para usarlos posteriormente. Para comenzar solo debes introdcuir el comando /start y empezar a manipular tus Skylines.
 
 ## Preparacion
+En este proyecto asumimos que cuentas con almenos `python3` instalado en tu ordenador. De no ser asi, visita
+[Instalar Python](https://www.python.org/downloads/) e instala la ultima version.
+Tambien es impresicindible contar con todas las dependencias del proyecto instaladas, para ello, colocate en la raiz
+ del proyecto, y ejecuta en la consola de comandos el siguiente comando:
+```
+> pip install -r requirements.txt
+```
 
 ## Ejecucion
-
+Para ejecutar el bot en tu maquina, debes solicitar un Token para los bots de Telegram, tal y como se explica en
+[@BotFather](https://core.telegram.org/bots#6-botfather) y guardarlo en la raiz del proyecto como `token.txt`. 
+Una vez hecho esto, basta con ejecutar el siguiente comando, y tu bot ya sera accesible desde cualquier dispositivo con
+Telegram mientras el proceso este activo:
+```
+> python3 bot.py  
+```
 ## Guia de uso
 
 ### Tipos de Skylines
@@ -189,6 +202,91 @@ comando `/clean` y este **vaciara** tu lista. De nuevo, puedes comprobar que ha 
 
 ## Metodologia
 
+###1. Gestion de usarios en Telegram
+Para gestionar los diferentes usuarios, desde el instante en que se inicia el programa se contabiliza mediante un contador
+cuantos usuarios han interactuado con el bot. Cada nuevo usuario que realiza el comando `/start`, recibe ese numero como
+identificador, y aumenta el contador en 1. Es decir, utilizamos el orden de entrada desde el inicio, para identificar a 
+cada usuario con un numero concreto.
+
+Este identificador nos sive para que a la hora de guardar archivos con el comando /save o crear skylines temporales, los
+archivos generados no dependan del nombre, sino que cuenten con un prefijo del usuario que los ha definido.
+
+* En el caso de la generacion de Skylines temporales, las imagenes generadas se guardan con un nombre que sigue la siguiente
+estructura:`<id>_tmp.png`. Estas imagenes temporales se guardan en una carpeta temporal llamada `/tmp` que se genera al
+inicio de la ejecucion. Estos archivos temporales se van sobreescribiendo, y si se reinicia el bot, las carpetas se vacian.
+
+* Los Skylines guardados mediante el comando `/save <nombreSkyline>` se guardan con la estrucutra 
+`<id>_<nombreSkyline>.sky` mediante el modulo `pickle` en la carpeta `/data`, que del mismo modo que `/tmp` se genera al
+inicio de la ejecucion y se vacia al reiniciar el bot, es decir, los datos solo estan presentes mientras el bot permanezca
+encendido.
+
+###2. Parsing de los comandos
+Para el parseo de los comandos he utilizado ANTLR4, con el que mediante el parseo de estrucutras definidas en una
+gramatica, los visitors realizan las pertinentes llamadas de la funcion Skyline. En este apartado es importante
+destacar, que para evitar la modificacion de los Skylines, cada operacion solicitada por el usuario genera un nuevo 
+Skyline, copiando todos los edificios que contiene para que estos no se vean modificados.
+
+Para poder acceder a declaraciones previas de Skylines permanentes, los visitors reciben en el momento de su creacion,
+un diccionario con los Skylines previamente definidos por el usuario que ha realizado la peticion y anaden nuevos a este
+si asi se solicita.
+
+###3. La clase Skyline
+*La clase Skyline cuenta con documentacion dentro del propio codigo, a continuacion se detallan los motivos de la
+implementacion final y su funcionamiento en general.*
+
+#### Que contiene?
+La clase Skyline cuenta con una lista de edificios, objetos de la clase Building, mas unos atributos del mismo, como son, 
+la coordenada minima y maxima del conjunto, la anchura total, la altura maxima y el area total del conjunto.
+
+#### Que es un edificio?
+Un edificio, desde un punto de vista geometrico, no es mas que un rectangulo localizado en un espacio 2D. De este basta
+con saber su coordenada x inicial `xmin`, su coordenada x final `xmax` y su altura `h`, mediante las cuales podemos
+calcular trivialmente su anchura y su area, a la vez que dibujarlo en un plano 2D.
+
+#### Como es la lista de edificios?
+La lista de edificios esta ordenada, tal y como se muestran de izquierda a derecha, y entre ellos no existen solapamientos.
+Cada vez que alguna operacion requiere de la insercion de un edificio en la clase Skyline, esta busca la posicion en la que
+deberia ir, y en aquellos puntos en los que es mas alto, el edificio permanece, y en los que es mas bajo, se recorta. 
+De este modo, lo que hacemos es que computar el area sea trivial, ya que no es mas que la suma de areas de todos los edificios,
+cuyo valor es multiplicar su anchura por su altura.
+
+#### Como insertamos un edificio?
+Para buscar la posicion en la que se deben insertar los edificios, dado que es una lista ordenada, he hecho una 
+modificacion al algoritmo de busqueda binaria (biseccion), de forma insertar un edificio tiene un coste logaritmico sobre
+la cantidad de edificios de la lista mas un coste lineal en el numero de edificios que se solapan que el nuevo que vamos
+a insertar.
+
+Esto es importante, porque tanto la union como la interseccion, se basan en insercion de edificios (la interseccion con
+mas restricciones) pero el hecho de que esten ordenados, nos ahorra mucho trabajo recorriendo todos los edificios. Tambien
+hace que tanto la replicacion como la inversion sea lineal, ya que los edificios estan ordenados y en este ultimo caso,
+basta con invertir el sentido de la lista y cambiar con una formula fija todas las coordenadas de los edificios.
+
+#### Cuando computamos el Area del Skyline?
+Es importante remarcar tambien, que el area, por cuestiones obvias, solo se actualiza una vez acabadas todas las operaciones,
+ya que esta no es necesaria mas que al final para mostrarla por pantalla. La funcion `update()`, computa la suma de las 
+areas de todos los edificios contenidos de una sola pasada.
+
+###4. Representacion grafica de los Skylines
+Para representar graficamente cada uno de los Skylines, dado que estos estan formados por edificios, que no son mas que
+rectangulos, se dibuja un grafico de barras, en el cual cada barra es cada uno de los edificios que conforma el Skyline.
+
+Los graficos de barras dibujan cada barra de una anchura y altura definidas, definidas en la abcisa pertinente. Para 
+dibujar el edificio en la posicion correcta, debemos desplazarlo a la derecha la mitad de su anchura para que el edificio
+no este centrado, sino que si esquina inferior izquierda este en el punto deseado. Hacemos uso de la siguiente formula: 
+```
+// Insercion de una barra que representa el edificio (xmin,h, xmax), donde w = xmax - xmin.
+plt.bar( self.xmin + (self.w / 2),  <- Punto de inicio (desplazamos la mitad a la derecha)
+         self.h,                    <- Altura del edificio
+         self.w,                    <- Anchura del edificio
+         color=(0, 0, 0, 1))        <- Color RGBA de la barra, en nuestro caso todas de color negro.
+```
+
 ## Herramientas utilizadas
+* [Python](https://www.python.org/) - A programming language that lets you work quickly and integrate systems more effectively.
+* [Antlr](https://www.antlr.org/) - A powerful parser generator for reading, processing, executing, or translating structured text or binary files.
+* [Matplotlib](https://matplotlib.org/#) - A comprehensive library for creating static, animated, and interactive visualizations in Python.
+* [Python-Telegram-Bot](https://github.com/python-telegram-bot/python-telegram-bot) - A pure Python interface for the Telegram Bot API.
+* [PyCharm](https://www.jetbrains.com/es-es/pycharm/) - IDE de Python para desarrolladores profesionales.
 
 ## Autores
+* **Edgar Perez Blanco** - *Full Project* - [GitHub](https://github.com/foster99)
